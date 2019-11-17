@@ -22,14 +22,12 @@
         ]
     },
     "scripts": {
+        "build:public": "npm install && rm -rf public/web_modules && npx @pika/web --dest public/web_modules",
+        "serve": "firebase serve --port 8000",
         "build": "pika build",
         "version": "npm run build",
         "publish": "pika publish",
-        "demo": "owc-dev-server",
-        "demo:open": "owc-dev-server --open demo",
-        "build:docs": "npm install && npx @pika/web --dest docs/web_modules",
-        "docs": "http-server docs",
-        "docs:open": "http-server --open docs"
+        "demo": "owc-dev-server"
     },
     "dependencies": {
         "@material/mwc-button": "^0.10.0",
