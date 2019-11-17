@@ -254,7 +254,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
     getUser(userId) {
         return new Promise((resolve, reject) => {
-            return this.firebase.database().ref('tokbox/users/' + userId).on('value', snapshot => {
+            return this.firebase.database().ref('users/' + userId).on('value', snapshot => {
                 let user = snapshot.val();
                 resolve(user);
             }, (error) => {
@@ -269,7 +269,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
     saveSaveUser(userId, user) {
         return new Promise((resolve, reject) => {
-            this.firebase.database().ref('tokbox/users/' + userId).set(user).then(() => {
+            this.firebase.database().ref('users/' + userId).set(user).then(() => {
                 resolve();
             }).catch((error) => {
                 reject(error);
