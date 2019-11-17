@@ -9,6 +9,7 @@
     "@material/mwc-textfield": "./@material/mwc-textfield.js",
     "lit-element": "./lit-element.js",
     "lit-html": "./lit-html.js",
-    "@wonkytech/tm-script-loader": "./@wonkytech/tm-script-loader.js"
+    "@wonkytech/tm-script-loader": "./@wonkytech/tm-script-loader.js",
+    "@wonkytech/tm-firebase-user": "./@wonkytech/tm-firebase-user.js"
   }
 }

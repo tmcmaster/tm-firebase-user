@@ -5,7 +5,7 @@
 </head>
 <body>
   <script type="module">
-    import './web_modules/tm-firebase-user/tm-firebase-user.js';
+    import './web_modules/@wonkytech/tm-firebase-user.js';
   </script>
   <style>
     body {
@@ -13,12 +13,17 @@
       padding: 0;
       width: 100vw;
       height: 100vh;
+      background: black;
     }
-    tm-tokbox {
-      height: 100%;
-      width: 100%;
+
+    tm-firebase-user {
+      --tm-firebase-user-color: green;
+      clear: both;
+      float: right;
+      margin: 50px;
     }
   </style>
   <tm-firebase-user></tm-firebase-user>
+
 </body>
 </html>
