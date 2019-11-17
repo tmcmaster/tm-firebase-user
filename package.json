@@ -27,7 +27,8 @@
         "build": "pika build",
         "version": "npm run build",
         "publish": "pika publish",
-        "demo": "owc-dev-server"
+        "demo": "owc-dev-server",
+        "deploy": "firebase deploy"
     },
     "dependencies": {
         "@material/mwc-button": "^0.10.0",

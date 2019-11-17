@@ -230,7 +230,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
             };
             let userId = response.user.uid;
             this.saveSaveUser(userId, user).then(() => {
-                this.storeUserLocally(user);
+                this.storeUserLocally({...user, password: password});
                 this.user = user;
                 console.log('Created new user: ', user);
             }).catch((error) => {
