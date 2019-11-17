@@ -138,12 +138,13 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 box-sizing: border-box;
                 font-size: 1.8vh;
                 padding-right: 20px;
+                color: var(--tm-firebase-user-color, lightgray);
             }
             
             mwc-button.title {
                 flex: 1;
-                --mdc-theme-primary: white;
-                --mdc-theme-on-primary: white;
+                --mdc-theme-primary: var(--tm-firebase-user-color, lightgray);;
+                --mdc-theme-on-primary: var(--tm-firebase-user-color, lightgray);;
             }
         `;
   } // noinspection JSUnusedGlobalSymbols
