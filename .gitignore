@@ -59,3 +59,13 @@ typings/
 
 # next.js build output
 .next
+tmp
+
+.idea/
+hold/
+junk/
+/docs/node_modules
+/docs/package-lock.json
+package-lock.json
+/pkg
+/web_modules

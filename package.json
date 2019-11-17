@@ -1,0 +1,48 @@
+{
+    "name": "@wonkytech/tm-firebase-user",
+    "version": "0.0.1",
+    "description": "Web component to manage firebase user authentication.",
+    "author": "Tim McMaster",
+    "homepage": "https://tmcmaster.github.io/tm-firebase-user",
+    "license": "MIT",
+    "repository": "https://github.com/tmcmaster/tm-firebase-user",
+    "pika": true,
+    "sideEffects": true,
+    "@pika/pack": {
+        "pipeline": [
+            [
+                "@pika/plugin-standard-pkg"
+            ],
+            [
+                "@pika/plugin-build-node"
+            ],
+            [
+                "@pika/plugin-build-web"
+            ]
+        ]
+    },
+    "scripts": {
+        "build": "pika build",
+        "version": "npm run build",
+        "publish": "pika publish",
+        "demo": "owc-dev-server",
+        "demo:open": "owc-dev-server --open demo",
+        "build:docs": "npm install && npx @pika/web --dest docs/web_modules",
+        "docs": "http-server docs",
+        "docs:open": "http-server --open docs"
+    },
+    "dependencies": {
+        "lit-element": "^2.0.1",
+        "lit-html": "^1.0.0"
+    },
+    "devDependencies": {
+        "@pika/pack": "^0.5.0",
+        "@pika/plugin-build-node": "^0.6.1",
+        "@pika/plugin-build-types": "^0.6.1",
+        "@pika/plugin-build-web": "^0.6.1",
+        "@pika/plugin-standard-pkg": "^0.6.1",
+        "@pika/types": "^0.6.1",
+        "es-dev-server": "^1.23.1",
+        "owc-dev-server": "^0.3.0"
+    }
+}
