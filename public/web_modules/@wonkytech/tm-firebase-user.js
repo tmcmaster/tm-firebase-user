@@ -39,6 +39,15 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     const password = this.shadowRoot.querySelector('#password');
     const firstName = this.shadowRoot.querySelector('#firstName');
     const lastName = this.shadowRoot.querySelector('#lastName');
+    const user = this.retrieveUserLocally();
+
+    if (user !== undefined && user !== null) {
+      email.value = user.email;
+      password.value = user.password;
+      firstName.value = user.firstName;
+      lastName.value = user.lastName;
+    }
+
     tabBar.addEventListener('MDCTabBar:activated', e => {
       console.log('TAB ACTION:', e);
       const index = e.detail.index;
@@ -169,10 +178,10 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                     </mwc-tab-bar>
                     
                     <div class="fields">
-                        <mwc-textfield id="email" label="Email Address" value="tim@mcmaster.id.au"></mwc-textfield>
-                        <mwc-textfield id="password" label="Password" value="Pn4ah5q4MbQTYgz"></mwc-textfield>
-                        <mwc-textfield id="firstName" label="First Name" value="Tim"></mwc-textfield>
-                        <mwc-textfield id="lastName" label="Last Name" value="McMaster"></mwc-textfield>
+                        <mwc-textfield id="email" label="Email Address" type="email"></mwc-textfield>
+                        <mwc-textfield id="password" label="Password" type="password"></mwc-textfield>
+                        <mwc-textfield id="firstName" label="First Name"></mwc-textfield>
+                        <mwc-textfield id="lastName" label="Last Name"></mwc-textfield>
                     </div>
                     
                     <mwc-button @click="${() => this.submit()}" slot="primaryAction" dialogAction="ok">submit</mwc-button>
@@ -200,6 +209,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
       console.log('Logged In Success: ', response);
       let userId = response.user.uid;
       this.getUser(userId).then(user => {
+        this.storeUserLocally(user);
         console.log('User retrieved from database: ', user);
         this.userName = `${user.firstName} ${user.lastName}`;
       }).catch(error => {
@@ -276,6 +286,15 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         reject(error);
       });
     });
+  }
+
+  storeUserLocally(user) {
+    localStorage.setItem("user", JSON.stringify(user));
+  }
+
+  retrieveUserLocally() {
+    let data = localStorage.getItem("user");
+    return JSON.parse(data);
   }
 
 });

@@ -13,6 +13,9 @@ render(html`
         } 
         tm-firebase-user {
             --tm-firebase-user-color: green;
+            clear: both;
+            float: right;
+            margin:50px;
         }
     </style>
     <tm-firebase-user .config="${firebaseConfig}"></tm-firebase-user>

@@ -15,14 +15,14 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     // noinspection JSUnusedGlobalSymbols
     static get properties() {
         return {
-            userName: {type: String},
+            user: {type: Object},
             config: {type: Object}
         }
     }
 
     constructor() {
         super();
-        this.userName = undefined;
+        this.user = undefined;
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -157,8 +157,8 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         return html`
             <div class="body">
                 <div class="title">
-                    <div class="username">${this.userName}</div>
-                    ${(this.userName === undefined ? html`
+                    <div class="username">${(this.user === undefined ? '' : this.user.firstName + ' ' + this.user.lastName)}</div>
+                    ${(this.user === undefined ? html`
                         <mwc-button id="title-login" class="title" outlined @click="${() => this.login()}">Login</mwc-button>
                     ` : html`
                         <mwc-button id="title-logout"  class="title" outlined @click="${() => this.logout()}">logout</mwc-button>
@@ -203,15 +203,15 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
             console.log('Logged In Success: ', response);
             let userId = response.user.uid;
             this.getUser(userId).then((user) => {
-                this.storeUserLocally(user);
+                this.storeUserLocally({...user, password: password});
                 console.log('User retrieved from database: ', user);
-                this.userName = `${user.firstName} ${user.lastName}`;
+                this.user = user;
             }).catch(error => {
                 console.error('There was an issue getting user: ', error);
             });
         }).catch((error) => {
             console.log('Logged In Error: ', error);
-            this.userName = undefined;
+            this.user = undefined;
         });
     }
 
@@ -230,7 +230,8 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
             };
             let userId = response.user.uid;
             this.saveSaveUser(userId, user).then(() => {
-                this.userName = `${firstName} ${lastName}`;
+                this.storeUserLocally(user);
+                this.user = user;
                 console.log('Created new user: ', user);
             }).catch((error) => {
                 console.error('Could not create the new user: ', error);
@@ -257,7 +258,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     }
 
     logout() {
-        this.userName = undefined;
+        this.user = undefined;
     }
 
     getUser(userId) {
@@ -269,10 +270,6 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 reject(error);
             });
         });
-    }
-
-    createUser(user) {
-
     }
 
     saveSaveUser(userId, user) {
