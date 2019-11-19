@@ -82,6 +82,9 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     initFirebase(firebase) {
         console.log('TM-LOGIN: firebase is now available.');
         this.firebase = firebase;
+
+        document.dispatchEvent(new CustomEvent('firebase-ready'));
+
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
                 console.log('User has logged in: ', user);

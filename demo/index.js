@@ -4,6 +4,10 @@ import {html, render} from "../public/web_modules/lit-html.js";
 
 import {firebaseConfig} from "../firebase-config.js";
 
+document.addEventListener('firebase-ready', (event) => {
+    console.log('DEMO - Firebase is ready to use.');
+});
+
 render(html`
     <style>
         body {
