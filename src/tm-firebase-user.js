@@ -23,17 +23,25 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     constructor() {
         super();
         this.user = undefined;
+
     }
 
     // noinspection JSUnusedGlobalSymbols
     firstUpdated(_changedProperties) {
         super.firstUpdated(_changedProperties);
-        const tabBar = this.shadowRoot.querySelector('#tabBar');
 
+        const tabBar = this.shadowRoot.querySelector('#tabBar');
         const email = this.shadowRoot.querySelector('#email');
         const password = this.shadowRoot.querySelector('#password');
         const firstName = this.shadowRoot.querySelector('#firstName');
         const lastName = this.shadowRoot.querySelector('#lastName');
+
+        email.classList.remove('hidden');
+        password.classList.add('hidden');
+        firstName.classList.add('hidden');
+        lastName.classList.add('hidden');
+
+        console.log('TM-FIREBASE-USER: elements: ', tabBar,email,password,firstName,lastName);
 
         const user = this.retrieveUserLocally();
         if (user !== undefined && user !== null) {
@@ -42,29 +50,6 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
             firstName.value = user.firstName;
             lastName.value = user.lastName;
         }
-        tabBar.addEventListener('MDCTabBar:activated', (e) => {
-            console.log('TAB ACTION:',e);
-            const index = e.detail.index;
-            const tabs = tabBar.getElementsByTagName('mwc-tab');
-            const name = tabs[index].getAttribute("name");
-            this.loginAction = name;
-            if (name === 'create') {
-                email.classList.remove('hidden');
-                password.classList.remove('hidden');
-                firstName.classList.remove('hidden');
-                lastName.classList.remove('hidden');
-            } else if (name === 'forgot') {
-                email.classList.remove('hidden');
-                password.classList.add('hidden');
-                firstName.classList.add('hidden');
-                lastName.classList.add('hidden');
-            } else if (name === 'login') {
-                email.classList.remove('hidden');
-                password.classList.remove('hidden');
-                firstName.classList.add('hidden');
-                lastName.classList.add('hidden');
-            }
-        });
 
         if (this.config === undefined) {
             loadFirebaseEmbedded().then((firebase) => {
@@ -76,6 +61,34 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 this.initFirebase(firebase);
             });
         }
+
+
+        tabBar.addEventListener('MDCTabBar:activated', (e) => {
+            if (email && password && firstName && lastName) {
+                console.log('TAB ACTION:',e);
+                const index = e.detail.index;
+                const tabs = tabBar.getElementsByTagName('mwc-tab');
+                const name = tabs[index].getAttribute("name");
+                this.loginAction = name;
+                if (name === 'create') {
+                    email.classList.remove('hidden');
+                    password.classList.remove('hidden');
+                    firstName.classList.remove('hidden');
+                    lastName.classList.remove('hidden');
+                } else if (name === 'forgot') {
+                    email.classList.remove('hidden');
+                    password.classList.add('hidden');
+                    firstName.classList.add('hidden');
+                    lastName.classList.add('hidden');
+                } else if (name === 'login') {
+                    email.classList.remove('hidden');
+                    password.classList.remove('hidden');
+                    firstName.classList.add('hidden');
+                    lastName.classList.add('hidden');
+                }
+            }
+        });
+
     }
 
 
@@ -209,6 +222,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 this.storeUserLocally({...user, password: password});
                 console.log('User retrieved from database: ', user);
                 this.user = user;
+                document.dispatchEvent(new CustomEvent('user-logged-in', {detail: user}));
             }).catch(error => {
                 console.error('There was an issue getting user: ', error);
             });
