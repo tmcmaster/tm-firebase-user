@@ -47,10 +47,10 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     const user = this.retrieveUserLocally();
 
     if (user !== undefined && user !== null) {
-      email.value = (user.email ? user.email : "");
-      password.value = (user.password ? user.password : "");
-      firstName.value = (user.firstName ? user.firstName : "");
-      lastName.value = (user.lastName ? user.lastName : "");
+      email.value = user.email ? user.email : "";
+      password.value = user.password ? user.password : "";
+      firstName.value = user.firstName ? user.firstName : "";
+      lastName.value = user.lastName ? user.lastName : "";
     }
 
     if (this.config === undefined) {
@@ -71,6 +71,10 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         const tabs = tabBar.getElementsByTagName('mwc-tab');
         const name = tabs[index].getAttribute("name");
         this.loginAction = name;
+        email.value = '';
+        password.value = '';
+        firstName.value = '';
+        lastName.value = '';
 
         if (name === 'create') {
           email.classList.remove('hidden');
@@ -78,11 +82,14 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
           firstName.classList.remove('hidden');
           lastName.classList.remove('hidden');
         } else if (name === 'forgot') {
+          email.value = this.user !== undefined ? this.user.email : '';
           email.classList.remove('hidden');
           password.classList.add('hidden');
           firstName.classList.add('hidden');
           lastName.classList.add('hidden');
         } else if (name === 'login') {
+          email.value = this.user !== undefined ? this.user.email : '';
+          password.value = this.user !== undefined ? this.user.password : '';
           email.classList.remove('hidden');
           password.classList.remove('hidden');
           firstName.classList.add('hidden');
@@ -99,11 +106,16 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         console.log('User has logged in: ', user);
+        document.dispatchEvent(new CustomEvent('user-logged-in', {
+          detail: user
+        }));
       } else {
         console.log('User has logged out: ', user);
+        document.dispatchEvent(new CustomEvent('user-logged-out'));
       }
     });
-  }
+  } // noinspection JSUnusedGlobalSymbols
+
 
   static get styles() {
     //language=CSS
@@ -222,9 +234,6 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         });
         console.log('User retrieved from database: ', user);
         this.user = user;
-        document.dispatchEvent(new CustomEvent('user-logged-in', {
-          detail: user
-        }));
       }).catch(error => {
         console.error('There was an issue getting user: ', error);
       });

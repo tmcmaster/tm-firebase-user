@@ -6,6 +6,19 @@
 <body>
   <script type="module">
     import './web_modules/@wonkytech/tm-firebase-user.js';
+
+    document.addEventListener('firebase-ready', (event) => {
+      console.log('PUBLIC - Firebase is ready to use.');
+    });
+
+    document.addEventListener('user-logged-in', (event) => {
+      console.log('PUBLIC - User logged in.', event);
+    });
+
+    document.addEventListener('user-logged-out', (event) => {
+      console.log('PUBLIC - User logged out.', event);
+    });
+
   </script>
   <style>
     body {

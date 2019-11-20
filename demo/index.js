@@ -8,6 +8,14 @@ document.addEventListener('firebase-ready', (event) => {
     console.log('DEMO - Firebase is ready to use.');
 });
 
+document.addEventListener('user-logged-in', (event) => {
+    console.log('DEMO - User logged in.', event);
+});
+
+document.addEventListener('user-logged-out', (event) => {
+    console.log('DEMO - User logged out.', event);
+});
+
 render(html`
     <style>
         body {
