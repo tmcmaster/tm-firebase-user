@@ -39,39 +39,19 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     const password = this.shadowRoot.querySelector('#password');
     const firstName = this.shadowRoot.querySelector('#firstName');
     const lastName = this.shadowRoot.querySelector('#lastName');
+    email.classList.remove('hidden');
+    password.classList.add('hidden');
+    firstName.classList.add('hidden');
+    lastName.classList.add('hidden');
+    console.log('TM-FIREBASE-USER: elements: ', tabBar, email, password, firstName, lastName);
     const user = this.retrieveUserLocally();
 
     if (user !== undefined && user !== null) {
-      email.value = user.email;
-      password.value = user.password;
-      firstName.value = user.firstName;
-      lastName.value = user.lastName;
+      email.value = (user.email ? user.email : "");
+      password.value = (user.password ? user.password : "");
+      firstName.value = (user.firstName ? user.firstName : "");
+      lastName.value = (user.lastName ? user.lastName : "");
     }
-
-    tabBar.addEventListener('MDCTabBar:activated', e => {
-      console.log('TAB ACTION:', e);
-      const index = e.detail.index;
-      const tabs = tabBar.getElementsByTagName('mwc-tab');
-      const name = tabs[index].getAttribute("name");
-      this.loginAction = name;
-
-      if (name === 'create') {
-        email.classList.remove('hidden');
-        password.classList.remove('hidden');
-        firstName.classList.remove('hidden');
-        lastName.classList.remove('hidden');
-      } else if (name === 'forgot') {
-        email.classList.remove('hidden');
-        password.classList.add('hidden');
-        firstName.classList.add('hidden');
-        lastName.classList.add('hidden');
-      } else if (name === 'login') {
-        email.classList.remove('hidden');
-        password.classList.remove('hidden');
-        firstName.classList.add('hidden');
-        lastName.classList.add('hidden');
-      }
-    });
 
     if (this.config === undefined) {
       loadFirebaseEmbedded().then(firebase => {
@@ -83,11 +63,39 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         this.initFirebase(firebase);
       });
     }
+
+    tabBar.addEventListener('MDCTabBar:activated', e => {
+      if (email && password && firstName && lastName) {
+        console.log('TAB ACTION:', e);
+        const index = e.detail.index;
+        const tabs = tabBar.getElementsByTagName('mwc-tab');
+        const name = tabs[index].getAttribute("name");
+        this.loginAction = name;
+
+        if (name === 'create') {
+          email.classList.remove('hidden');
+          password.classList.remove('hidden');
+          firstName.classList.remove('hidden');
+          lastName.classList.remove('hidden');
+        } else if (name === 'forgot') {
+          email.classList.remove('hidden');
+          password.classList.add('hidden');
+          firstName.classList.add('hidden');
+          lastName.classList.add('hidden');
+        } else if (name === 'login') {
+          email.classList.remove('hidden');
+          password.classList.remove('hidden');
+          firstName.classList.add('hidden');
+          lastName.classList.add('hidden');
+        }
+      }
+    });
   }
 
   initFirebase(firebase) {
     console.log('TM-LOGIN: firebase is now available.');
     this.firebase = firebase;
+    document.dispatchEvent(new CustomEvent('firebase-ready'));
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         console.log('User has logged in: ', user);
@@ -214,6 +222,9 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         });
         console.log('User retrieved from database: ', user);
         this.user = user;
+        document.dispatchEvent(new CustomEvent('user-logged-in', {
+          detail: user
+        }));
       }).catch(error => {
         console.error('There was an issue getting user: ', error);
       });

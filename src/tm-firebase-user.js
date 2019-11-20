@@ -45,10 +45,10 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
         const user = this.retrieveUserLocally();
         if (user !== undefined && user !== null) {
-            email.value = user.email;
-            password.value = user.password;
-            firstName.value = user.firstName;
-            lastName.value = user.lastName;
+            email.value = (user.email ? user.email : "");
+            password.value = (user.password ? user.password : "");
+            firstName.value = (user.firstName ? user.firstName : "");
+            lastName.value = (user.lastName ? user.lastName : "");
         }
 
         if (this.config === undefined) {
@@ -107,6 +107,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         });
     }
 
+    // noinspection JSUnusedGlobalSymbols
     static get styles() {
         //language=CSS
         return css`
