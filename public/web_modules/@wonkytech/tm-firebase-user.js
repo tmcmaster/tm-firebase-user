@@ -45,14 +45,6 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     firstName.classList.add('hidden');
     lastName.classList.add('hidden');
     console.log(LOG_PREFIX + 'Elements: ', tabBar, email, password, firstName, lastName);
-    const user = this.retrieveUserLocally();
-
-    if (user !== undefined && user !== null) {
-      email.value = user.email ? user.email : "";
-      password.value = user.password ? user.password : "";
-      firstName.value = user.firstName ? user.firstName : "";
-      lastName.value = user.lastName ? user.lastName : "";
-    }
 
     if (this.config === undefined) {
       loadFirebaseEmbedded().then(firebase => {
@@ -67,6 +59,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
     tabBar.addEventListener('MDCTabBar:activated', e => {
       if (email && password && firstName && lastName) {
+        const user = this.retrieveUserLocally();
         console.log(LOG_PREFIX + 'TAB ACTION:', e);
         const index = e.detail.index;
         const tabs = tabBar.getElementsByTagName('mwc-tab');
@@ -83,14 +76,14 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
           firstName.classList.remove('hidden');
           lastName.classList.remove('hidden');
         } else if (name === 'forgot') {
-          email.value = this.user !== undefined ? this.user.email : '';
+          email.value = user !== undefined ? user.email : '';
           email.classList.remove('hidden');
           password.classList.add('hidden');
           firstName.classList.add('hidden');
           lastName.classList.add('hidden');
         } else if (name === 'login') {
-          email.value = this.user !== undefined ? this.user.email : '';
-          password.value = this.user !== undefined ? this.user.password : '';
+          email.value = user !== undefined ? user.email : '';
+          password.value = user !== undefined ? user.password : '';
           email.classList.remove('hidden');
           password.classList.remove('hidden');
           firstName.classList.add('hidden');
@@ -107,14 +100,29 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         console.log(LOG_PREFIX + 'User has logged in: ', user);
-        document.dispatchEvent(new CustomEvent('user-logged-in', {
-          detail: user
-        }));
-        this.user = user;
+        const userId = user.uid;
+        this.retrieveUser(userId).then(user => {
+          this.user = { ...user,
+            uid: userId
+          };
+          console.log(LOG_PREFIX + 'User retrieved from database: ', this.user);
+          document.dispatchEvent(new CustomEvent('user-logged-in', {
+            detail: { ...this.user
+            }
+          }));
+        }).catch(error => {
+          console.error(LOG_PREFIX + 'There was an issue getting user: ' + userId, error);
+        });
       } else {
-        console.log(LOG_PREFIX + 'User has logged out: ', user);
-        document.dispatchEvent(new CustomEvent('user-logged-out'));
-        this.user = undefined;
+        if (this.user !== undefined) {
+          console.log(LOG_PREFIX + 'User has logged out.');
+          const user = { ...this.user
+          };
+          this.user = undefined;
+          document.dispatchEvent(new CustomEvent('user-logged-out', {
+            detail: user
+          }));
+        }
       }
     });
   } // noinspection JSUnusedGlobalSymbols
@@ -186,7 +194,6 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     return html`
             <div class="body">
                 <div class="title">
-                    <div class="username">${this.user === undefined ? '' : this.user.firstName + ' ' + this.user.lastName}</div>
                     ${this.user === undefined ? html`
                         <mwc-button id="title-login" class="title" outlined @click="${() => this.login()}">Login</mwc-button>
                     ` : html`
@@ -214,6 +221,11 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         `;
   }
 
+  getUser() {
+    return { ...this.user
+    };
+  }
+
   submit() {
     if (this.loginAction === "login") {
       this.loginWithEmail();
@@ -230,18 +242,12 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     const password = this.shadowRoot.querySelector('#password').value;
     this.firebase.auth().signInWithEmailAndPassword(email, password).then(response => {
       console.log(LOG_PREFIX + 'Logged In Success: ', response);
-      let userId = response.user.uid;
-      this.getUser(userId).then(user => {
-        this.storeUserLocally({ ...user,
-          password: password
-        });
-        console.log(LOG_PREFIX + 'User retrieved from database: ', user);
-      }).catch(error => {
-        console.error(LOG_PREFIX + 'There was an issue getting user: ', error);
+      this.storeUserLocally({
+        email: email,
+        password: password
       });
     }).catch(error => {
       console.log(LOG_PREFIX + 'Logged In Error: ', error);
-      this.user = undefined;
     });
   }
 
@@ -260,10 +266,13 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
       };
       let userId = response.user.uid;
       this.saveSaveUser(userId, user).then(() => {
-        this.storeUserLocally({ ...user,
+        this.storeUserLocally({
+          email: email,
           password: password
         });
-        this.user = user;
+        this.user = { ...user,
+          uid: userId
+        };
         console.log(LOG_PREFIX + 'Created new user: ', user);
       }).catch(error => {
         console.error(LOG_PREFIX + 'Could not create the new user: ', error);
@@ -289,7 +298,6 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
   }
 
   logout() {
-    this.user = undefined;
     console.log(LOG_PREFIX + 'Logging user out.');
     this.firebase.auth().signOut().then(function () {
       console.log(LOG_PREFIX + 'User has signed off.');
@@ -298,7 +306,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     });
   }
 
-  getUser(userId) {
+  retrieveUser(userId) {
     return new Promise((resolve, reject) => {
       return this.firebase.database().ref('users/' + userId).on('value', snapshot => {
         let user = snapshot.val();
