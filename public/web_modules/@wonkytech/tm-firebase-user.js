@@ -13,6 +13,7 @@ import '../@material/mwc-textfield.js';
 import { loadLink, loadFirebaseEmbedded, loadFirebaseCDN } from './tm-script-loader.js';
 
 loadLink("https://fonts.googleapis.com/icon?family=Material+Icons");
+const LOG_PREFIX = 'TM-FIREBASE-USER: ';
 window.customElements.define('tm-firebase-user', class extends LitElement {
   // noinspection JSUnusedGlobalSymbols
   static get properties() {
@@ -43,7 +44,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     password.classList.add('hidden');
     firstName.classList.add('hidden');
     lastName.classList.add('hidden');
-    console.log('TM-FIREBASE-USER: elements: ', tabBar, email, password, firstName, lastName);
+    console.log(LOG_PREFIX + 'Elements: ', tabBar, email, password, firstName, lastName);
     const user = this.retrieveUserLocally();
 
     if (user !== undefined && user !== null) {
@@ -66,7 +67,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
     tabBar.addEventListener('MDCTabBar:activated', e => {
       if (email && password && firstName && lastName) {
-        console.log('TAB ACTION:', e);
+        console.log(LOG_PREFIX + 'TAB ACTION:', e);
         const index = e.detail.index;
         const tabs = tabBar.getElementsByTagName('mwc-tab');
         const name = tabs[index].getAttribute("name");
@@ -100,18 +101,20 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
   }
 
   initFirebase(firebase) {
-    console.log('TM-LOGIN: firebase is now available.');
+    console.log(LOG_PREFIX + 'Firebase is now available.');
     this.firebase = firebase;
     document.dispatchEvent(new CustomEvent('firebase-ready'));
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
-        console.log('User has logged in: ', user);
+        console.log(LOG_PREFIX + 'User has logged in: ', user);
         document.dispatchEvent(new CustomEvent('user-logged-in', {
           detail: user
         }));
+        this.user = user;
       } else {
-        console.log('User has logged out: ', user);
+        console.log(LOG_PREFIX + 'User has logged out: ', user);
         document.dispatchEvent(new CustomEvent('user-logged-out'));
+        this.user = undefined;
       }
     });
   } // noinspection JSUnusedGlobalSymbols
@@ -222,35 +225,34 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
   }
 
   loginWithEmail() {
-    console.log('TM-LOGIN: firebase login requested');
+    console.log(LOG_PREFIX + 'Firebase login requested');
     const email = this.shadowRoot.querySelector('#email').value;
     const password = this.shadowRoot.querySelector('#password').value;
     this.firebase.auth().signInWithEmailAndPassword(email, password).then(response => {
-      console.log('Logged In Success: ', response);
+      console.log(LOG_PREFIX + 'Logged In Success: ', response);
       let userId = response.user.uid;
       this.getUser(userId).then(user => {
         this.storeUserLocally({ ...user,
           password: password
         });
-        console.log('User retrieved from database: ', user);
-        this.user = user;
+        console.log(LOG_PREFIX + 'User retrieved from database: ', user);
       }).catch(error => {
-        console.error('There was an issue getting user: ', error);
+        console.error(LOG_PREFIX + 'There was an issue getting user: ', error);
       });
     }).catch(error => {
-      console.log('Logged In Error: ', error);
+      console.log(LOG_PREFIX + 'Logged In Error: ', error);
       this.user = undefined;
     });
   }
 
   createAccount() {
-    console.log('TM-LOGIN: firebase create new account requested');
+    console.log('TM-FIREBASE-USER: firebase create new account requested');
     const email = this.shadowRoot.querySelector('#email').value;
     const password = this.shadowRoot.querySelector('#password').value;
     const firstName = this.shadowRoot.querySelector('#firstName').value;
     const lastName = this.shadowRoot.querySelector('#lastName').value;
     this.firebase.auth().createUserWithEmailAndPassword(email, password).then(response => {
-      console.error('Create user: ', response);
+      console.error(LOG_PREFIX + 'Create user: ', response);
       let user = {
         firstName: firstName,
         lastName: lastName,
@@ -262,22 +264,22 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
           password: password
         });
         this.user = user;
-        console.log('Created new user: ', user);
+        console.log(LOG_PREFIX + 'Created new user: ', user);
       }).catch(error => {
-        console.error('Could not create the new user: ', error);
+        console.error(LOG_PREFIX + 'Could not create the new user: ', error);
       });
     }).catch(error => {
-      console.error('There was an issue creating the user: ', error);
+      console.error(LOG_PREFIX + 'There was an issue creating the user: ', error);
     });
   }
 
   forgotPassword() {
-    console.log('TM-LOGIN: firebase forgot password requested', this.firebase.auth());
+    console.log(LOG_PREFIX + 'Firebase forgot password requested', this.firebase.auth());
     const email = this.shadowRoot.querySelector('#email').value;
     this.firebase.auth().sendPasswordResetEmail(email).then(() => {
-      console.log('TM-LOGIN: password reset has been sent', e);
+      console.log(LOG_PREFIX + 'Password reset has been sent', e);
     }).catch(e => {
-      console.log('TM-LOGIN: password reset error', e);
+      console.log(LOG_PREFIX + 'Password reset error', e);
     });
   }
 
@@ -288,6 +290,12 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
   logout() {
     this.user = undefined;
+    console.log(LOG_PREFIX + 'Logging user out.');
+    this.firebase.auth().signOut().then(function () {
+      console.log(LOG_PREFIX + 'User has signed off.');
+    }, function (error) {
+      console.error(LOG_PREFIX + 'There was a problem signing out', error);
+    });
   }
 
   getUser(userId) {
