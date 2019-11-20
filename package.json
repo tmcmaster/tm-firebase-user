@@ -1,6 +1,6 @@
 {
     "name": "@wonkytech/tm-firebase-user",
-    "version": "0.0.15",
+    "version": "0.0.16",
     "description": "Web component to manage firebase user authentication.",
     "author": "Tim McMaster",
     "homepage": "https://tmcmaster.github.io/tm-firebase-user",
