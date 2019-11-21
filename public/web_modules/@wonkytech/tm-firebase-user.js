@@ -58,8 +58,9 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     }
 
     tabBar.addEventListener('MDCTabBar:activated', e => {
+      const user = this.retrieveUserLocally();
+
       if (email && password && firstName && lastName) {
-        const user = this.retrieveUserLocally();
         console.log(LOG_PREFIX + 'TAB ACTION:', e);
         const index = e.detail.index;
         const tabs = tabBar.getElementsByTagName('mwc-tab');
@@ -69,6 +70,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         password.value = '';
         firstName.value = '';
         lastName.value = '';
+        console.log(LOG_PREFIX + 'Enabling fields for action: :' + this.loginAction);
 
         if (name === 'create') {
           email.classList.remove('hidden');
@@ -96,20 +98,22 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
   initFirebase(firebase) {
     console.log(LOG_PREFIX + 'Firebase is now available.');
     this.firebase = firebase;
-    document.dispatchEvent(new CustomEvent('firebase-ready'));
+    this.dispatchEventGlobal('firebase-ready');
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         console.log(LOG_PREFIX + 'User has logged in: ', user);
         const userId = user.uid;
+        const email = user.email;
+        console.log(LOG_PREFIX + `Retrieving user details from the database: Email(${email}), uid(${userId})`);
         this.retrieveUser(userId).then(user => {
           this.user = { ...user,
             uid: userId
           };
           console.log(LOG_PREFIX + 'User retrieved from database: ', this.user);
-          document.dispatchEvent(new CustomEvent('user-logged-in', {
+          this.dispatchEventGlobal('user-logged-in', {
             detail: { ...this.user
             }
-          }));
+          });
         }).catch(error => {
           console.error(LOG_PREFIX + 'There was an issue getting user: ' + userId, error);
         });
@@ -119,9 +123,11 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
           const user = { ...this.user
           };
           this.user = undefined;
-          document.dispatchEvent(new CustomEvent('user-logged-out', {
+          this.dispatchEventGlobal('user-logged-out', {
             detail: user
-          }));
+          });
+        } else {
+          console.warn(LOG_PREFIX + 'User was already logged out.');
         }
       }
     });
@@ -237,28 +243,28 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
   }
 
   loginWithEmail() {
-    console.log(LOG_PREFIX + 'Firebase login requested');
     const email = this.shadowRoot.querySelector('#email').value;
     const password = this.shadowRoot.querySelector('#password').value;
+    console.log(LOG_PREFIX + `Firebase login with email has been requested: Email(${email})`);
     this.firebase.auth().signInWithEmailAndPassword(email, password).then(response => {
-      console.log(LOG_PREFIX + 'Logged In Success: ', response);
+      console.log(LOG_PREFIX + `Login with email was successful: Email(${email})`, response);
       this.storeUserLocally({
         email: email,
         password: password
       });
     }).catch(error => {
-      console.log(LOG_PREFIX + 'Logged In Error: ', error);
+      console.log(LOG_PREFIX + `Login with email failed: Email(${email})`, error);
     });
   }
 
   createAccount() {
-    console.log('TM-FIREBASE-USER: firebase create new account requested');
     const email = this.shadowRoot.querySelector('#email').value;
     const password = this.shadowRoot.querySelector('#password').value;
     const firstName = this.shadowRoot.querySelector('#firstName').value;
     const lastName = this.shadowRoot.querySelector('#lastName').value;
+    console.log(LOG_PREFIX + `Requesting new account to be created: Email(${email})`);
     this.firebase.auth().createUserWithEmailAndPassword(email, password).then(response => {
-      console.error(LOG_PREFIX + 'Create user: ', response);
+      console.log(LOG_PREFIX + `Account has been created in firebase: Email(${email})`, response);
       let user = {
         firstName: firstName,
         lastName: lastName,
@@ -266,62 +272,70 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
       };
       let userId = response.user.uid;
       this.saveSaveUser(userId, user).then(() => {
+        this.user = { ...user,
+          uid: userId
+        };
+        console.log(LOG_PREFIX + 'User has been created in the database: ', this.user);
         this.storeUserLocally({
           email: email,
           password: password
         });
-        this.user = { ...user,
-          uid: userId
-        };
-        console.log(LOG_PREFIX + 'Created new user: ', user);
+        console.log(LOG_PREFIX + 'Remember login details, by storing them in local storage: ', this.user);
       }).catch(error => {
-        console.error(LOG_PREFIX + 'Could not create the new user: ', error);
+        console.error(LOG_PREFIX + `Could not create the new user: Email(${email}), uid(${userId})`, error);
       });
     }).catch(error => {
-      console.error(LOG_PREFIX + 'There was an issue creating the user: ', error);
+      console.error(LOG_PREFIX + `There was an issue creating the user: ${email}`, error);
     });
   }
 
   forgotPassword() {
-    console.log(LOG_PREFIX + 'Firebase forgot password requested', this.firebase.auth());
     const email = this.shadowRoot.querySelector('#email').value;
+    console.log(LOG_PREFIX + `Requesting password reset email: Email(${email})`);
     this.firebase.auth().sendPasswordResetEmail(email).then(() => {
-      console.log(LOG_PREFIX + 'Password reset has been sent', e);
+      console.log(LOG_PREFIX + `Password reset email has been sent. Email(${email})`);
     }).catch(e => {
-      console.log(LOG_PREFIX + 'Password reset error', e);
+      console.log(LOG_PREFIX + `Password reset email failed: Email(${email})`, e);
     });
   }
 
   login() {
-    console.log('login');
+    console.log('Opening the login dialog.');
     this.shadowRoot.querySelector('#dialog').open = true;
   }
 
   logout() {
-    console.log(LOG_PREFIX + 'Logging user out.');
+    const email = this.user.email;
+    console.log(LOG_PREFIX + `Signing out user: Email(${email})`, this.user);
     this.firebase.auth().signOut().then(function () {
-      console.log(LOG_PREFIX + 'User has signed off.');
+      console.log(LOG_PREFIX + `User has been signed out: Email(${email})`);
     }, function (error) {
-      console.error(LOG_PREFIX + 'There was a problem signing out', error);
+      console.error(LOG_PREFIX + `There was a problem signing out the user: Email(${email})`, error);
     });
   }
 
   retrieveUser(userId) {
+    console.log(LOG_PREFIX + `Retrieving user from the database: uid(${userId})`);
     return new Promise((resolve, reject) => {
-      return this.firebase.database().ref('users/' + userId).on('value', snapshot => {
+      return this.firebase.database().ref('users/' + userId).once('value', snapshot => {
         let user = snapshot.val();
+        console.log(LOG_PREFIX + `Retrieved user from database: Email(${user.email}), uid(${userId})`, user);
         resolve(user);
       }, error => {
+        console.error(LOG_PREFIX + `There was an error retrieving the user from database: uid(${userId})`, error);
         reject(error);
       });
     });
   }
 
   saveSaveUser(userId, user) {
+    console.log(LOG_PREFIX + `Saving user to the database: uid(${userId})`, user);
     return new Promise((resolve, reject) => {
       this.firebase.database().ref('users/' + userId).set(user).then(() => {
+        console.log(LOG_PREFIX + `Saved the user into the database: Email(${user.email}), uid(${userId})`, user);
         resolve();
       }).catch(error => {
+        console.error(LOG_PREFIX + `There was an error saving the user into the database: Email(${user.email}), uid(${userId})`, error);
         reject(error);
       });
     });
@@ -333,7 +347,30 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
   retrieveUserLocally() {
     let data = localStorage.getItem("user");
-    return JSON.parse(data);
+    return data ? JSON.parse(data) : {
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: ""
+    };
+  }
+
+  dispatchEventLocal(eventName, payload) {
+    dispatchEvent(createEvent(eventName, payload), this);
+  }
+
+  dispatchEventGlobal(eventName, payload) {
+    dispatchEvent(createEvent(eventName, payload), document);
   }
 
 });
+
+function dispatchEvent(event, destination) {
+  (destination ? destination : document).dispatchEvent(event);
+}
+
+function createEvent(eventName, payload) {
+  return payload ? new CustomEvent(eventName, {
+    detail: payload
+  }) : new CustomEvent(eventName);
+}
