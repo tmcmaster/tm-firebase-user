@@ -1,0 +1,9 @@
+{
+    "scripts": {
+        "build": "npm install && rm -rf ../public/web_modules && npx @pika/web --dest ../public/web_modules"
+    },
+    "dependencies": {
+        "@wonkytech/material-elements": "^0.0.6",
+        "@wonkytech/tm-firebase-user": "^0.0.17"
+    }
+}

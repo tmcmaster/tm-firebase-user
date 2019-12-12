@@ -1,15 +1,6 @@
 {
   "imports": {
-    "@material/mwc-button": "./@material/mwc-button.js",
-    "@material/mwc-dialog": "./@material/mwc-dialog.js",
-    "@material/mwc-icon": "./@material/mwc-icon.js",
-    "@material/mwc-icon-button": "./@material/mwc-icon-button.js",
-    "@material/mwc-tab": "./@material/mwc-tab.js",
-    "@material/mwc-tab-bar": "./@material/mwc-tab-bar.js",
-    "@material/mwc-textfield": "./@material/mwc-textfield.js",
-    "@wonkytech/tm-firebase-user": "./@wonkytech/tm-firebase-user.js",
-    "@wonkytech/tm-script-loader": "./@wonkytech/tm-script-loader.js",
-    "lit-element": "./lit-element.js",
-    "lit-html": "./lit-html.js"
+    "@wonkytech/material-elements": "./@wonkytech/material-elements.js",
+    "@wonkytech/tm-firebase-user": "./@wonkytech/tm-firebase-user.js"
   }
 }
