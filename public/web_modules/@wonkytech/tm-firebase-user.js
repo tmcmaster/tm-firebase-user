@@ -1,11 +1,6 @@
 import { h as html } from '../common/lit-html-acd9a6eb.js';
 import { LitElement, css } from '../lit-element.js';
 import './material-elements.js';
-// import '@material/mwc-dialog';
-// import '@material/mwc-tab';
-// import '@material/mwc-tab-bar';
-// import '@material/mwc-button';
-// import '@material/mwc-textfield';
 
 function _loadScripts(scripts) {
   return new Promise((resolve, reject) => {
