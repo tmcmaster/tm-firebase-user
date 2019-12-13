@@ -1,6 +1,6 @@
+import './material-elements.js';
 import { h as html } from '../common/lit-html-acd9a6eb.js';
 import { LitElement, css } from '../lit-element.js';
-import './material-elements.js';
 
 function _loadScripts(scripts) {
   return new Promise((resolve, reject) => {
