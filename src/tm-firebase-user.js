@@ -1,10 +1,6 @@
 import {LitElement, html, css} from 'lit-element';
 
-import '@material/mwc-dialog';
-import '@material/mwc-tab';
-import '@material/mwc-tab-bar';
-import '@material/mwc-button';
-import '@material/mwc-textfield';
+import '@wonkytech/material-elements'
 
 import {loadFirebaseCDN, loadFirebaseEmbedded, loadLink} from '@wonkytech/tm-script-loader';
 
