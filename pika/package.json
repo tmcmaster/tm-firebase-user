@@ -4,7 +4,7 @@
     },
     "dependencies": {
         "@wonkytech/material-elements": "^0.0.6",
-        "@wonkytech/tm-firebase-user": "~0.1",
+        "@wonkytech/tm-firebase-user": "^0.1.2",
         "lit-element": "^2.0.1",
         "lit-html": "^1.0.0"
     }
