@@ -210,7 +210,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
   initFirebase(firebase) {
     console.log(LOG_PREFIX + 'Firebase is now available.');
     this.firebase = firebase;
-    this.dispatchEvent(createEvent('firebase-ready'));
+    document.dispatchEvent(createEvent('firebase-ready'));
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         console.log(LOG_PREFIX + 'User has logged in: ', user);
@@ -222,7 +222,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
             uid: userId
           };
           console.log(LOG_PREFIX + 'User retrieved from database: ', this.user);
-          this.dispatchEvent(createEvent('user-logged-in', { ...this.user
+          document.dispatchEvent(createEvent('user-logged-in', { ...this.user
           }));
         }).catch(error => {
           console.error(LOG_PREFIX + 'There was an issue getting user: ' + userId, error);
@@ -233,7 +233,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
           const user = { ...this.user
           };
           this.user = undefined;
-          this.dispatchEvent(createEvent('user-logged-out', { ...user
+          document.dispatchEvent(createEvent('user-logged-out', { ...user
           }));
         }
       }
