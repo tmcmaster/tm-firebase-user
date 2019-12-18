@@ -30,8 +30,7 @@
         "docs:clear": "rm -rf public/web_modules",
         "docs:install": "npm install && npx @pika/web --dest public/web_modules",
         "docs:pika": "(cd pika; npm run build)",
-        "build:docs": "npm run docs:clear && npm run docs:install && npm run docs:pika",
-        "deploy": "firebase deploy --only hosting:tm-firebase-user"
+        "build:docs": "npm run docs:clear && npm run docs:install && npm run docs:pika"
     },
     "dependencies": {
         "@wonkytech/material-elements": "^0.0.6",

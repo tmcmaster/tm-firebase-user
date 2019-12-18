@@ -102,6 +102,23 @@ function _loadScript(script) {
   }
 } // TODO: need to add logic to test if the link has already been added.
 
+
+function loadLink(link) {
+  const newLink = document.createElement("link");
+  newLink.setAttribute("rel", "stylesheet");
+  newLink.setAttribute("href", link);
+
+  newLink.onload = event => {
+    console.log('Script has been loaded successfully: ' + link);
+  };
+
+  newLink.onerror = error => {
+    console.error(`There was an issue loading link(${link}):`, error);
+  };
+
+  document.getElementsByTagName('head')[0].append(newLink);
+}
+
 function loadFirebaseEmbedded() {
   return _loadScripts({
     load: ['/__/firebase/7.2.0/firebase-app.js', '/__/firebase/7.2.3/firebase-analytics.js', '/__/firebase/7.2.0/firebase-auth.js'],
@@ -125,6 +142,7 @@ function loadFirebaseCDN() {
   });
 }
 
+loadLink("https://fonts.googleapis.com/icon?family=Material+Icons");
 const LOG_PREFIX = 'TM-FIREBASE-USER: ';
 window.customElements.define('tm-firebase-user', class extends LitElement {
   // noinspection JSUnusedGlobalSymbols

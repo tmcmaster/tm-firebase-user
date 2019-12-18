@@ -3,7 +3,9 @@ import {LitElement, css} from 'lit-element';
 
 import '@wonkytech/material-elements'
 
-import {loadFirebaseCDN, loadFirebaseEmbedded} from '@wonkytech/tm-script-loader';
+import {loadFirebaseCDN, loadFirebaseEmbedded, loadLink} from '@wonkytech/tm-script-loader';
+
+loadLink("https://fonts.googleapis.com/icon?family=Material+Icons");
 
 const LOG_PREFIX = 'TM-FIREBASE-USER: ';
 
