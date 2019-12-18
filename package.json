@@ -24,6 +24,7 @@
     "scripts": {
         "build:public": "npm install && rm -rf public/web_modules && npx @pika/web --dest public/web_modules",
         "serve": "firebase serve --port 8000",
+        "deploy": "firebase deploy --only hosting:tm-firebase-user",
         "build": "pika build",
         "version": "npm run build",
         "publish": "pika publish",
