@@ -121,7 +121,7 @@ function loadLink(link) {
 
 function loadFirebaseEmbedded() {
   return _loadScripts({
-    load: ['/__/firebase/7.2.0/firebase-app.js', '/__/firebase/7.2.3/firebase-analytics.js', '/__/firebase/7.2.0/firebase-auth.js'],
+    load: ['/__/firebase/7.2.0/firebase-app.js', '/__/firebase/7.2.0/firebase-auth.js'],
     then: {
       load: ['/__/firebase/7.2.0/firebase-database.js', '/__/firebase/7.2.0/firebase-messaging.js', '/__/firebase/7.2.0/firebase-storage.js'],
       then: {

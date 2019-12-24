@@ -25,6 +25,23 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
     }
 
+    connectedCallback() {
+        super.connectedCallback();
+
+        this._loginListener = () => this.login();
+        this._logoutListener = () => this.logout();
+        document.addEventListener('user-login', this._loginListener);
+        document.addEventListener('user-logout', this._logoutListener);
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        document.removeEventListener('user-login', this._loginListener);
+        document.removeEventListener('user-logout', this._logoutListener);
+        this._loginListener = undefined;
+        this._logoutListener = undefined;
+    }
+
     // noinspection JSUnusedGlobalSymbols
     firstUpdated(_changedProperties) {
         super.firstUpdated(_changedProperties);
