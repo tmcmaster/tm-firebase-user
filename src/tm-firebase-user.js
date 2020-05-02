@@ -125,10 +125,18 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 const userId = user.uid;
                 const email = user.email;
                 console.log(LOG_PREFIX + `Retrieving user details from the database: Email(${email}), uid(${userId})`);
-                this.retrieveUser(userId).then((user) => {
-                    this.user = {...user, uid: userId};
-                    console.log(LOG_PREFIX + 'User retrieved from database: ', this.user);
-                    document.dispatchEvent(createEvent('user-logged-in', {...this.user}));
+                Promise.all([
+                    this.retrieveUser(userId),
+                    this.retrieveStatus(userId)
+                ]).then(([user,status]) => {
+                    this.user = { ...user,
+                        uid: userId,
+                        name: this.generateName(user)
+                    };
+                    Object.assign(this.user, status);
+                    window.user = this.user;
+                    console.log(LOG_PREFIX + 'User details retrieved from database: ', this.user);
+                    document.dispatchEvent(createEvent('user-logged-in', { ...this.user}));
                 }).catch(error => {
                     console.error(LOG_PREFIX + 'There was an issue getting user: ' + userId, error);
                 });
@@ -137,6 +145,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                     console.log(LOG_PREFIX + 'User has logged out.');
                     const user = {...this.user};
                     this.user = undefined;
+                    window.user = undefined;
                     document.dispatchEvent(createEvent('user-logged-out', {...user}));
                 }
             }
@@ -327,6 +336,12 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         });
     }
 
+    generateName(user) {
+        const firstName = (user.firstName ? user.firstName  : '');
+        const lastName = (user.lastName ? user.lastName  : '');
+        return (firstName.length > 0 && lastName.length > 0 ? `${firstName} ${lastName}` : (firstName.length > 0 ? firstName : lastName));
+    }
+
     retrieveUser(userId) {
         console.log(LOG_PREFIX + `Retrieving user from the database: uid(${userId})`);
         return new Promise((resolve, reject) => {
@@ -337,6 +352,21 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 resolve(user);
             }, (error) => {
                 console.error(LOG_PREFIX + `There was an error retrieving the user from database: uid(${userId})`, error);
+                reject(error);
+            });
+        });
+    }
+
+    retrieveStatus(userId) {
+        console.log(LOG_PREFIX + `Retrieving user status from the database: uid(${userId})`);
+        return new Promise((resolve, reject) => {
+            // noinspection JSUnresolvedVariable,JSUnresolvedFunction
+            return this.firebase.database().ref('status/' + userId).once('value', snapshot => {
+                let userStatus = snapshot.val();
+                console.log(LOG_PREFIX + `Retrieved user from database: uid(${userId})`, userStatus);
+                resolve(userStatus);
+            }, error => {
+                console.error(LOG_PREFIX + `There was an error retrieving the user status from database: uid(${userId})`, error);
                 reject(error);
             });
         });
