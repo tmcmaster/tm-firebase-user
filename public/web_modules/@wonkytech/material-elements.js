@@ -1,4 +1,4 @@
-import { d as directive, A as AttributePart, P as PropertyPart, h as html, n as noChange, N as NodePart, t as templateFactory } from '../common/lit-html-acd9a6eb.js';
+import { d as directive, A as AttributePart, P as PropertyPart, h as html, n as noChange, N as NodePart, t as templateFactory } from '../common/lit-html-0e66f29e.js';
 import { query, property, css, customElement, eventOptions, LitElement } from '../lit-element.js';
 
 /*! *****************************************************************************
@@ -1156,18 +1156,44 @@ if (!Element.prototype.hasOwnProperty('inert')) {
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
+// IE11 doesn't support classList on SVG elements, so we emulate it with a Set
+class ClassList {
+    constructor(element) {
+        this.classes = new Set();
+        this.changed = false;
+        this.element = element;
+        const classList = (element.getAttribute('class') || '').split(/\s+/);
+        for (const cls of classList) {
+            this.classes.add(cls);
+        }
+    }
+    add(cls) {
+        this.classes.add(cls);
+        this.changed = true;
+    }
+    remove(cls) {
+        this.classes.delete(cls);
+        this.changed = true;
+    }
+    commit() {
+        if (this.changed) {
+            let classString = '';
+            this.classes.forEach((cls) => classString += cls + ' ');
+            this.element.setAttribute('class', classString);
+        }
+    }
+}
 /**
  * Stores the ClassInfo object applied to a given AttributePart.
  * Used to unset existing values when a new ClassInfo object is applied.
  */
-const classMapCache = new WeakMap();
+const previousClassesCache = new WeakMap();
 /**
  * A directive that applies CSS classes. This must be used in the `class`
  * attribute and must be the only part used in the attribute. It takes each
  * property in the `classInfo` argument and adds the property name to the
- * element's `classList` if the property value is truthy; if the property value
- * is falsey, the property name is removed from the element's `classList`. For
- * example
+ * element's `class` if the property value is truthy; if the property value is
+ * falsey, the property name is removed from the element's `class`. For example
  * `{foo: bar}` applies the class `foo` if the value of `bar` is truthy.
  * @param classInfo {ClassInfo}
  */
@@ -1179,29 +1205,42 @@ const classMap = directive((classInfo) => (part) => {
     }
     const { committer } = part;
     const { element } = committer;
-    // handle static classes
-    if (!classMapCache.has(part)) {
-        element.className = committer.strings.join(' ');
+    let previousClasses = previousClassesCache.get(part);
+    if (previousClasses === undefined) {
+        // Write static classes once
+        // Use setAttribute() because className isn't a string on SVG elements
+        element.setAttribute('class', committer.strings.join(' '));
+        previousClassesCache.set(part, previousClasses = new Set());
     }
-    const { classList } = element;
-    // remove old classes that no longer apply
-    const oldInfo = classMapCache.get(part);
-    for (const name in oldInfo) {
+    const classList = (element.classList || new ClassList(element));
+    // Remove old classes that no longer apply
+    // We use forEach() instead of for-of so that re don't require down-level
+    // iteration.
+    previousClasses.forEach((name) => {
         if (!(name in classInfo)) {
             classList.remove(name);
+            previousClasses.delete(name);
         }
-    }
-    // add new classes
+    });
+    // Add or remove classes based on their classMap value
     for (const name in classInfo) {
         const value = classInfo[name];
-        if (!oldInfo || value !== oldInfo[name]) {
-            // We explicitly want a loose truthy check here because
-            // it seems more convenient that '' and 0 are skipped.
-            const method = value ? 'add' : 'remove';
-            classList[method](name);
+        if (value != previousClasses.has(name)) {
+            // We explicitly want a loose truthy check of `value` because it seems
+            // more convenient that '' and 0 are skipped.
+            if (value) {
+                classList.add(name);
+                previousClasses.add(name);
+            }
+            else {
+                classList.remove(name);
+                previousClasses.delete(name);
+            }
         }
     }
-    classMapCache.set(part, classInfo);
+    if (typeof classList.commit === 'function') {
+        classList.commit();
+    }
 });
 
 /**
@@ -1221,13 +1260,13 @@ const classMap = directive((classInfo) => (part) => {
  * Stores the StyleInfo object applied to a given AttributePart.
  * Used to unset existing values when a new StyleInfo object is applied.
  */
-const styleMapCache = new WeakMap();
+const previousStylePropertyCache = new WeakMap();
 /**
  * A directive that applies CSS properties to an element.
  *
  * `styleMap` can only be used in the `style` attribute and must be the only
  * expression in the attribute. It takes the property names in the `styleInfo`
- * object and adds the property values as CSS propertes. Property names with
+ * object and adds the property values as CSS properties. Property names with
  * dashes (`-`) are assumed to be valid CSS property names and set on the
  * element's style object using `setProperty()`. Names without dashes are
  * assumed to be camelCased JavaScript property names and set on the element's
@@ -1247,34 +1286,38 @@ const styleMap = directive((styleInfo) => (part) => {
     }
     const { committer } = part;
     const { style } = committer.element;
-    // Handle static styles the first time we see a Part
-    if (!styleMapCache.has(part)) {
+    let previousStyleProperties = previousStylePropertyCache.get(part);
+    if (previousStyleProperties === undefined) {
+        // Write static styles once
         style.cssText = committer.strings.join(' ');
+        previousStylePropertyCache.set(part, previousStyleProperties = new Set());
     }
     // Remove old properties that no longer exist in styleInfo
-    const oldInfo = styleMapCache.get(part);
-    for (const name in oldInfo) {
+    // We use forEach() instead of for-of so that re don't require down-level
+    // iteration.
+    previousStyleProperties.forEach((name) => {
         if (!(name in styleInfo)) {
+            previousStyleProperties.delete(name);
             if (name.indexOf('-') === -1) {
-                // tslint:disable-next-line:no-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 style[name] = null;
             }
             else {
                 style.removeProperty(name);
             }
         }
-    }
+    });
     // Add or update properties
     for (const name in styleInfo) {
+        previousStyleProperties.add(name);
         if (name.indexOf('-') === -1) {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             style[name] = styleInfo[name];
         }
         else {
             style.setProperty(name, styleInfo[name]);
         }
     }
-    styleMapCache.set(part, styleInfo);
 });
 
 /**
@@ -1290,6 +1333,7 @@ const styleMap = directive((styleInfo) => (part) => {
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
+const previousValues = new WeakMap();
 /**
  * For AttributeParts, sets the attribute if the value is defined and removes
  * the attribute if the value is undefined.
@@ -1297,15 +1341,19 @@ const styleMap = directive((styleInfo) => (part) => {
  * For other part types, this directive is a no-op.
  */
 const ifDefined = directive((value) => (part) => {
+    const previousValue = previousValues.get(part);
     if (value === undefined && part instanceof AttributePart) {
-        if (value !== part.value) {
+        // If the value is undefined, remove the attribute, but only if the value
+        // was previously defined.
+        if (previousValue !== undefined || !previousValues.has(part)) {
             const name = part.committer.name;
             part.committer.element.removeAttribute(name);
         }
     }
-    else {
+    else if (value !== previousValue) {
         part.setValue(value);
     }
+    previousValues.set(part, value);
 });
 
 /**
