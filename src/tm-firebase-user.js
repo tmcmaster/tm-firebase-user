@@ -7,7 +7,7 @@ import {loadFirebaseCDN, loadFirebaseEmbedded, loadLink} from '@wonkytech/tm-scr
 
 loadLink("https://fonts.googleapis.com/icon?family=Material+Icons");
 
-const LOG_PREFIX = 'TM-FIREBASE-USER: ';
+const LOG_PREFIX = 'TM-FIREBASE-USER';
 
 window.customElements.define('tm-firebase-user', class extends LitElement {
 
@@ -22,9 +22,11 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     constructor() {
         super();
         this.user = undefined;
-
+        this.config = undefined;
+        this.userDetails = undefined;
     }
 
+    // noinspection JSUnusedGlobalSymbols
     connectedCallback() {
         super.connectedCallback();
 
@@ -34,6 +36,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         document.addEventListener('user-logout', this._logoutListener);
     }
 
+    // noinspection JSUnusedGlobalSymbols
     disconnectedCallback() {
         super.disconnectedCallback();
         document.removeEventListener('user-login', this._loginListener);
@@ -57,8 +60,6 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         firstName.classList.add('hidden');
         lastName.classList.add('hidden');
 
-        console.log(LOG_PREFIX + 'Elements: ', tabBar,email,password,firstName,lastName);
-
         if (this.config === undefined) {
             loadFirebaseEmbedded().then((firebase) => {
                 this.initFirebase(firebase);
@@ -70,13 +71,12 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
             });
         }
 
-
         tabBar.addEventListener('MDCTabBar:activated', (e) => {
             const user = this.retrieveUserLocally();
 
             if (email && password && firstName && lastName) {
 
-                console.log(LOG_PREFIX + 'TAB ACTION:',e);
+                console.log(LOG_PREFIX + ' - TAB ACTION:',e);
                 const index = e.detail.index;
                 const tabs = tabBar.getElementsByTagName('mwc-tab');
                 const name = tabs[index].getAttribute("name");
@@ -87,7 +87,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 firstName.value = '';
                 lastName.value = '';
 
-                console.log(LOG_PREFIX + 'Enabling fields for action: :' + this.loginAction);
+                console.log(LOG_PREFIX + ' - Enabling fields for action: :' + this.loginAction);
 
                 if (name === 'create') {
                     email.classList.remove('hidden');
@@ -114,41 +114,69 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     }
 
     initFirebase(firebase) {
-        console.log(LOG_PREFIX + 'Firebase is now available.');
+        console.log(LOG_PREFIX + ' - Firebase is now available.');
         this.firebase = firebase;
 
         document.dispatchEvent(createEvent('firebase-ready'));
 
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                console.log(LOG_PREFIX + 'User has logged in: ', user);
+                console.log(LOG_PREFIX + ' - User has logged in: ', user);
                 const userId = user.uid;
-                const email = user.email;
-                console.log(LOG_PREFIX + `Retrieving user details from the database: Email(${email}), uid(${userId})`);
-                Promise.all([
-                    this.retrieveUser(userId),
-                    this.retrieveStatus(userId)
-                ]).then(([user,status]) => {
-                    this.user = { ...user,
-                        uid: userId,
-                        name: this.generateName(user)
-                    };
-                    Object.assign(this.user, status);
-                    window.user = this.user;
-                    console.log(LOG_PREFIX + 'User details retrieved from database: ', this.user);
-                    document.dispatchEvent(createEvent('user-logged-in', { ...this.user}));
-                }).catch(error => {
-                    console.error(LOG_PREFIX + 'There was an issue getting user: ' + userId, error);
-                });
+                if (this.userDetails) {
+                    // TODO: this timeout needs to be remove, and replaced by waiting for when the user records have been created.
+                    setTimeout(() => {
+                        this.constructUser(userId, this.userDetails).then(constructedUser => {
+                            this.userDetails = undefined;
+                            this.user = constructedUser;
+                            window.user = constructedUser;
+                            document.dispatchEvent(createEvent('user-logged-in', {...constructedUser}));
+                        }).catch(error => {
+                            console.error(`${LOG_PREFIX} - onAuthStateChanged - Could not construct new user, with extra details.`, error);
+                        });
+                    }, 5000);
+                } else {
+                    this.constructUser(userId).then((constructedUser) => {
+                        this.user = constructedUser;
+                        window.user = constructedUser;
+                        document.dispatchEvent(createEvent('user-logged-in', {...constructedUser}));
+                    }).catch(error => {
+                        console.error(`${LOG_PREFIX} - onAuthStateChanged - Could not construct new user.`, error);
+                    });
+                }
             } else {
                 if (this.user !== undefined) {
-                    console.log(LOG_PREFIX + 'User has logged out.');
+                    console.log(LOG_PREFIX + ' - User has logged out.');
                     const user = {...this.user};
+                    this.firstName = undefined;
+                    this.lastName = undefined;
                     this.user = undefined;
                     window.user = undefined;
                     document.dispatchEvent(createEvent('user-logged-out', {...user}));
                 }
             }
+        });
+    }
+
+    constructUser(userId, userDetails) {
+        console.log(LOG_PREFIX + ` - Retrieving user details from the database: uid(${userId}), User Details: `, userDetails);
+        return new Promise((resolve, reject) => {
+            Promise.all([
+                this.retrieveUser(userId),
+                this.retrieveStatus(userId)
+            ]).then(([user,status]) => {
+                if (userDetails) {
+                    this.saveSaveUser(userId, Object.assign({...user}, userDetails)).then(() => {
+                        const constructedUser = Object.assign({...user}, status, userDetails);
+                        console.log(LOG_PREFIX + ` - New user details have been saved, and user constructed: uid(${userId}), ConstructedUser: `, userDetails);
+                        resolve(constructedUser);
+                    }).catch(error => reject(error));
+                } else {
+                    const constructedUser = Object.assign({...user}, status);
+                    console.log(LOG_PREFIX + ` - User constructed: uid(${userId}), ConstructedUser: `, userDetails);
+                    resolve(constructedUser);
+                }
+            }).catch(error => reject(error));
         });
     }
 
@@ -160,8 +188,10 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 display: inline-block;
                 box-sizing: border-box;
                 //width: 50vw;
+                
+                --dialog-color: var(--firebase-user-dialog-color, #1A73E8);
             }
-            
+
             div.body {
                 display: flex;
                 flex-direction: column;
@@ -184,11 +214,11 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
             mwc-dialog {
                 display:inline-block;
             }
-            
+
             div.fields {
                 padding-top: 20px;
             }
-            
+
             div.title {
                 display: flex;
                 flex-direction: row;
@@ -196,7 +226,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 align-items: center;
                 //border: solid white 2px;
             }
-            
+
             div.username {
                 flex: auto;
                 display: inline-block;
@@ -205,11 +235,36 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 padding-right: 20px;
                 color: var(--tm-firebase-user-color, lightgray);
             }
-            
+
             mwc-button.title {
                 flex: 1;
-                --mdc-theme-primary: var(--tm-firebase-user-color, lightgray);;
-                --mdc-theme-on-primary: var(--tm-firebase-user-color, lightgray);;
+                --mdc-theme-primary: var(--tm-firebase-user-color, lightgray);
+                --mdc-theme-on-primary: var(--tm-firebase-user-color, lightgray);
+            }
+            
+            mwc-tab {
+                --mdc-theme-primary: var(--dialog-color);
+                --mdc-theme-secondary: var(--dialog-color);;
+                --mdc-tab-text-label-color-default: var(--dialog-color);;
+                --mdc-tab-color-default: var(--dialog-color);;
+            }
+            
+            mwc-button.action {
+                --mdc-button-outline-color: var(--dialog-color);;
+                --mdc-theme-primary: var(--dialog-color);;
+                border: solid var(--dialog-color) 1px;
+                margin-bottom: 20px;
+            }
+
+            mwc-button.last {
+                margin-right: 35px;
+            }
+            
+            mwc-textfield {
+                --mdc-theme-primary: var(--dialog-color);;
+                ---mdc-text-field-ink-color: var(--dialog-color);;
+                ---mdc-text-field-label-ink-color: var(--dialog-color);;
+                --mdc-text-field-idle-line-color: var(--dialog-color);;
             }
         `;
     }
@@ -239,8 +294,8 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                         <mwc-textfield id="lastName" label="Last Name"></mwc-textfield>
                     </div>
                     
-                    <mwc-button @click="${() => this.submit()}" slot="primaryAction" dialogAction="ok">submit</mwc-button>
-                    <mwc-button slot="secondaryAction" dialogAction="cancel">cancel</mwc-button>
+                    <mwc-button class="action last" @click="${() => this.submit()}" slot="primaryAction" dialogAction="ok">submit</mwc-button>
+                    <mwc-button class="action" slot="secondaryAction" dialogAction="cancel">cancel</mwc-button>                    
                 </mwc-dialog>
             </div>
         `;
@@ -265,14 +320,14 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         const email = this.shadowRoot.querySelector('#email').value;
         const password = this.shadowRoot.querySelector('#password').value;
 
-        console.log(LOG_PREFIX + `Firebase login with email has been requested: Email(${email})`);
+        console.log(LOG_PREFIX + ` - Firebase login with email has been requested: Email(${email})`);
 
         // noinspection JSUnresolvedVariable,JSUnresolvedFunction
         this.firebase.auth().signInWithEmailAndPassword(email, password).then((response) => {
-            console.log(LOG_PREFIX + `Login with email was successful: Email(${email})`, response);
+            console.log(LOG_PREFIX + ` - Login with email was successful: Email(${email})`, response);
             this.storeUserLocally({email: email, password: password});
         }).catch((error) => {
-            console.log(LOG_PREFIX + `Login with email failed: Email(${email})`, error);
+            console.log(LOG_PREFIX + ` - Login with email failed: Email(${email})`, error);
         });
     }
 
@@ -282,41 +337,48 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         const firstName = this.shadowRoot.querySelector('#firstName').value;
         const lastName = this.shadowRoot.querySelector('#lastName').value;
 
-        console.log(LOG_PREFIX + `Requesting new account to be created: Email(${email})`);
-
+        console.log(LOG_PREFIX + ` - Requesting new account to be created: Email(${email})`);
+        this.newAccount = true;
         // noinspection JSUnresolvedVariable,JSUnresolvedFunction
         this.firebase.auth().createUserWithEmailAndPassword(email, password).then((response) => {
-            console.log(LOG_PREFIX + `Account has been created in firebase: Email(${email})`, response);
-            let user = {
-                firstName: firstName,
-                lastName: lastName,
-                email: email
-            };
-            let userId = response.user.uid;
-            this.saveSaveUser(userId, user).then(() => {
-                this.user = {...user, uid: userId};
-                console.log(LOG_PREFIX + 'User has been created in the database: ', this.user);
+            if (response) {
+                const user = this.firebase.auth().currentUser;
+                const userId = user.uid;
+                const email = user.email;
+                this.userDetails = {
+                    firstName: firstName,
+                    lastName: lastName,
+                    name: (firstName + (firstName && lastName ? ' ' : '') + lastName)
+                };
+                console.log(LOG_PREFIX + ` - Account has been created in firebase: User(${userId}), Email(${email})`, user);
+                user.updateProfile({
+                    displayName: this.userDetails.name,
+                    firstName: (firstName ? firstName : ''),
+                    lastName: (lastName ? lastName : ''),
+                }).then((s) => {
+                    console.log(`${LOG_PREFIX} - First and last name have been added to profile: User(${userId}), Email(${email}), FirstName(${firstName}), LastName(${lastName})`, user);
+                }).catch(error => {
+                    console.error(`${LOG_PREFIX} - Could not add First and Last name to the user profile: User(${userId}), Email(${email}), FirstName(${firstName}), LastName(${lastName})`, error);
+                });
                 this.storeUserLocally({email: email, password: password});
-                console.log(LOG_PREFIX + 'Remember login details, by storing them in local storage: ', this.user);
-            }).catch((error) => {
-                console.error(LOG_PREFIX + `Could not create the new user: Email(${email}), uid(${userId})`, error);
-            });
-
+            } else {
+                console.log(`$LOG_PREFIX} - There was an issue creating the account: Email(${email})`);
+            }
         }).catch((error) => {
-            console.error(LOG_PREFIX + `There was an issue creating the user: ${email}`, error);
+            console.error(LOG_PREFIX + ` - There was an issue creating the user: ${email}`, error);
         });
     }
 
     forgotPassword() {
         const email = this.shadowRoot.querySelector('#email').value;
 
-        console.log(LOG_PREFIX + `Requesting password reset email: Email(${email})`);
+        console.log(LOG_PREFIX + ` - Requesting password reset email: Email(${email})`);
 
         // noinspection JSUnresolvedVariable,JSUnresolvedFunction
         this.firebase.auth().sendPasswordResetEmail(email).then(() => {
-            console.log(LOG_PREFIX + `Password reset email has been sent. Email(${email})`);
+            console.log(LOG_PREFIX + ` - Password reset email has been sent. Email(${email})`);
         }).catch((e) => {
-            console.log(LOG_PREFIX + `Password reset email failed: Email(${email})`, e);
+            console.log(LOG_PREFIX + ` - Password reset email failed: Email(${email})`, e);
         });
     }
 
@@ -327,12 +389,12 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
     logout() {
         const email = this.user.email;
-        console.log(LOG_PREFIX + `Signing out user: Email(${email})`, this.user);
+        console.log(LOG_PREFIX + ` - Signing out user: Email(${email})`, this.user);
         // noinspection JSUnresolvedVariable,JSUnresolvedFunction
         this.firebase.auth().signOut().then(function() {
-            console.log(LOG_PREFIX + `User has been signed out: Email(${email})`);
+            console.log(LOG_PREFIX + ` - User has been signed out: Email(${email})`);
         }, function(error) {
-            console.error(LOG_PREFIX + `There was a problem signing out the user: Email(${email})`, error);
+            console.error(LOG_PREFIX + ` - There was a problem signing out the user: Email(${email})`, error);
         });
     }
 
@@ -343,30 +405,30 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     }
 
     retrieveUser(userId) {
-        console.log(LOG_PREFIX + `Retrieving user from the database: uid(${userId})`);
+        console.log(LOG_PREFIX + ` - Retrieving user from the database: uid(${userId})`);
         return new Promise((resolve, reject) => {
             // noinspection JSUnresolvedVariable,JSUnresolvedFunction
-            return this.firebase.database().ref('users/' + userId).once('value', snapshot => {
+            this.firebase.database().ref('users/' + userId).once('value', (snapshot) => {
                 let user = snapshot.val();
-                console.log(LOG_PREFIX + `Retrieved user from database: Email(${user.email}), uid(${userId})`, user);
+                console.log(LOG_PREFIX + ` - Retrieved user from database: Email(${user.email}), uid(${userId})`, user);
                 resolve(user);
             }, (error) => {
-                console.error(LOG_PREFIX + `There was an error retrieving the user from database: uid(${userId})`, error);
+                console.error(LOG_PREFIX + ` - There was an error retrieving the user from database: uid(${userId})`, error);
                 reject(error);
             });
         });
     }
 
     retrieveStatus(userId) {
-        console.log(LOG_PREFIX + `Retrieving user status from the database: uid(${userId})`);
+        console.log(LOG_PREFIX + ` - Retrieving user status from the database: uid(${userId})`);
         return new Promise((resolve, reject) => {
             // noinspection JSUnresolvedVariable,JSUnresolvedFunction
             return this.firebase.database().ref('status/' + userId).once('value', snapshot => {
                 let userStatus = snapshot.val();
-                console.log(LOG_PREFIX + `Retrieved user from database: uid(${userId})`, userStatus);
+                console.log(LOG_PREFIX + ` - Retrieved user from database: uid(${userId})`, userStatus);
                 resolve(userStatus);
             }, error => {
-                console.error(LOG_PREFIX + `There was an error retrieving the user status from database: uid(${userId})`, error);
+                console.error(LOG_PREFIX + ` - There was an error retrieving the user status from database: uid(${userId})`, error);
                 reject(error);
             });
         });
@@ -376,11 +438,11 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         console.log(LOG_PREFIX + `Saving user to the database: uid(${userId})`, user);
         return new Promise((resolve, reject) => {
             // noinspection JSUnresolvedVariable,JSUnresolvedFunction
-            this.firebase.database().ref('users/' + userId).set(user).then(() => {
-                console.log(LOG_PREFIX + `Saved the user into the database: Email(${user.email}), uid(${userId})`, user);
+            this.firebase.database().ref('users/' + userId).update(user).then(() => {
+                console.log(LOG_PREFIX + ` - Saved the user into the database: Email(${user.email}), uid(${userId})`, user);
                 resolve();
             }).catch((error) => {
-                console.error(LOG_PREFIX + `There was an error saving the user into the database: Email(${user.email}), uid(${userId})`, error);
+                console.error(LOG_PREFIX + ` - There was an error saving the user into the database: Email(${user.email}), uid(${userId})`, error);
                 reject(error);
             });
 
@@ -393,7 +455,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
     retrieveUserLocally() {
         let data = localStorage.getItem("user");
-        return (data ? JSON.parse(data) : {email:"",password:"",firstName: "", lastName: ""});
+        return (data ? JSON.parse(data) : {email:"",password:""});
     }
 });
 
