@@ -1,10 +1,10 @@
 {
     "scripts": {
-        "build": "npm update && pika-web --clean --dest ../docs/web_modules"
+        "build": "npm update && pika-web --clean --dest ../public/web_modules"
     },
     "dependencies": {
         "@wonkytech/material-elements": "~0.0",
-        "@wonkytech/tm-firebase-user": "~0.1",
+        "@wonkytech/tm-firebase-user": "^0.1.6",
         "lit-element": "^2.3.1",
         "lit-html": "^1.2.1"
     }
