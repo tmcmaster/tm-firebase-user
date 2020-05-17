@@ -27,15 +27,15 @@
         "publish": "pika publish",
         "serve": "firebase serve --port 8000",
         "deploy": "firebase deploy --only hosting:tm-firebase-user",
-        "build:docs": "(cd pika; npm run build)",
+        "build:pika": "(cd pika; npm run build)",
         "demo": "owc-dev-server",
         "docs": "http-server docs"
     },
     "dependencies": {
         "@wonkytech/material-elements": "~0.0",
-        "@wonkytech/tm-script-loader": "~0.1",
-        "lit-element": "^2.0.1",
-        "lit-html": "^1.0.0"
+        "@wonkytech/tm-firebase-service": "^0.1.5",
+        "lit-element": "^2.3.1",
+        "lit-html": "^1.2.1"
     },
     "devDependencies": {
         "@pika/pack": "^0.5.0",
