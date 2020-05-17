@@ -5,7 +5,19 @@
 </head>
 <body>
   <script type="module">
+
+    import {FirebaseService} from './web_modules/@wonkytech/tm-firebase-service.js';
     import './web_modules/@wonkytech/tm-firebase-user.js';
+
+    import {mainConfig, appConfig, userLogin} from "./firebase-config.js";
+
+    FirebaseService.init({
+      appName: 'meetup',
+      appConfig: appConfig,
+      mainConfig: mainConfig
+    }).then(() => {
+      console.log('Firebase initialised.');
+    }).catch(error => console.error('Could not initialise firebase: ', error));
 
     document.addEventListener('firebase-ready', (event) => {
       console.log('PUBLIC - Firebase is ready to use.');
