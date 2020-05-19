@@ -3,7 +3,7 @@ import {LitElement, css} from 'lit-element';
 
 import '@wonkytech/material-elements'
 
-import {FirebaseService} from "@wonkytech/tm-firebase-service";
+import {Firebase} from "@wonkytech/tm-firebase-service";
 
 import {loadLink} from '@wonkytech/tm-script-loader';
 
@@ -302,7 +302,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
         console.log(LOG_PREFIX + ` - Firebase login with email has been requested: Email(${email})`);
 
-        FirebaseService.login(email, password).then((user) => {
+        Firebase.login(email, password).then((user) => {
             console.log(LOG_PREFIX + ` - Login with email was successful: Email(${email}), User:`, user);
             if (remember) {
                 this.storeUserLocally({email: email, password: password, remember: true});
@@ -327,7 +327,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
 
         console.log(LOG_PREFIX + ` - Requesting new account to be created: Email(${email})`);
 
-        FirebaseService.createUser(email, password, firstName, lastName).then(user => {
+        Firebase.createUser(email, password, firstName, lastName).then(user => {
             if (remember) {
                 this.storeUserLocally({email: email, password: password, remember: true});
             } else {
@@ -344,7 +344,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     forgotPassword() {
         const email = this.shadowRoot.querySelector('#email').value;
         console.log(`${LOG_PREFIX} - forgotPassword - Requesting password reset email: Email(${email})`);
-        FirebaseService.forgotPassword(email).then(() => {
+        Firebase.forgotPassword(email).then(() => {
             console.log(`${LOG_PREFIX} - forgotPassword - Password reset email has been sent. Email(${email})`);
             this.activeIndex = 0;
         }).catch((error) => {
@@ -361,7 +361,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
         const email = this.user.email;
         console.log(LOG_PREFIX + ` - Signing out user: Email(${email})`, this.user);
         // noinspection JSUnresolvedVariable,JSUnresolvedFunction
-        FirebaseService.logout().then(user => {
+        Firebase.logout().then(user => {
             console.log(LOG_PREFIX + ` - User has been signed out: Email(${email}): `, user);
         }).catch(error => console.error(`${LOG_PREFIX} - logout - could not logout: Email(${email}): `, error));
     }

@@ -2,10 +2,10 @@ import '../src/index.js';
 
 import {html, render} from "../public/web_modules/lit-html.js";
 
-import {FirebaseService} from "../node_modules/@wonkytech/tm-firebase-service/dist-web/index.js";
+import {Firebase} from "../node_modules/@wonkytech/tm-firebase-service/dist-web/index.js";
 import {mainConfig, appConfig, userLogin} from "../public/firebase-config.js";
 
-FirebaseService.init({
+Firebase.init({
     appName: 'meetup',
     appConfig: appConfig,
     mainConfig: mainConfig

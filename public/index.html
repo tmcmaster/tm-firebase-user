@@ -6,12 +6,12 @@
 <body>
   <script type="module">
 
-    import {FirebaseService} from './web_modules/@wonkytech/tm-firebase-service.js';
+    import {Firebase} from './web_modules/@wonkytech/tm-firebase-service.js';
     import './web_modules/@wonkytech/tm-firebase-user.js';
 
     import {mainConfig, appConfig, userLogin} from "./firebase-config.js";
 
-    FirebaseService.init({
+    Firebase.init({
       appName: 'meetup',
       appConfig: appConfig,
       mainConfig: mainConfig
