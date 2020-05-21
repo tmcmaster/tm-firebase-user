@@ -1,8 +1,23 @@
 import './material-elements.js';
 import { h as html } from '../common/lit-html-0e66f29e.js';
 import { LitElement, css } from '../lit-element.js';
-import { b as loadLink } from '../common/index-0be88400.js';
-import { FirebaseService } from './tm-firebase-service.js';
+import { Firebase } from './tm-firebase-service.js';
+
+function loadLink(link) {
+  const newLink = document.createElement("link");
+  newLink.setAttribute("rel", "stylesheet");
+  newLink.setAttribute("href", link);
+
+  newLink.onload = event => {
+    console.log('Script has been loaded successfully: ' + link);
+  };
+
+  newLink.onerror = error => {
+    console.error(`There was an issue loading link(${link}):`, error);
+  };
+
+  document.getElementsByTagName('head')[0].append(newLink);
+}
 
 loadLink("https://fonts.googleapis.com/icon?family=Material+Icons");
 const LOG_PREFIX = 'TM-FIREBASE-USER';
@@ -300,7 +315,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     const remember = rememberEl.checked;
     this.remember = remember;
     console.log(LOG_PREFIX + ` - Firebase login with email has been requested: Email(${email})`);
-    FirebaseService.login(email, password).then(user => {
+    Firebase.login(email, password).then(user => {
       console.log(LOG_PREFIX + ` - Login with email was successful: Email(${email}), User:`, user);
 
       if (remember) {
@@ -330,7 +345,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     const lastName = this.shadowRoot.querySelector('#lastName').value;
     const remember = this.shadowRoot.querySelector('#remember').checked;
     console.log(LOG_PREFIX + ` - Requesting new account to be created: Email(${email})`);
-    FirebaseService.createUser(email, password, firstName, lastName).then(user => {
+    Firebase.createUser(email, password, firstName, lastName).then(user => {
       if (remember) {
         this.storeUserLocally({
           email: email,
@@ -354,7 +369,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
   forgotPassword() {
     const email = this.shadowRoot.querySelector('#email').value;
     console.log(`${LOG_PREFIX} - forgotPassword - Requesting password reset email: Email(${email})`);
-    FirebaseService.forgotPassword(email).then(() => {
+    Firebase.forgotPassword(email).then(() => {
       console.log(`${LOG_PREFIX} - forgotPassword - Password reset email has been sent. Email(${email})`);
       this.activeIndex = 0;
     }).catch(error => {
@@ -371,7 +386,7 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
     const email = this.user.email;
     console.log(LOG_PREFIX + ` - Signing out user: Email(${email})`, this.user); // noinspection JSUnresolvedVariable,JSUnresolvedFunction
 
-    FirebaseService.logout().then(user => {
+    Firebase.logout().then(user => {
       console.log(LOG_PREFIX + ` - User has been signed out: Email(${email}): `, user);
     }).catch(error => console.error(`${LOG_PREFIX} - logout - could not logout: Email(${email}): `, error));
   }

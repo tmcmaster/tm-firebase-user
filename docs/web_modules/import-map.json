@@ -1,8 +1,0 @@
-{
-  "imports": {
-    "@wonkytech/material-elements": "./@wonkytech/material-elements.js",
-    "@wonkytech/tm-firebase-user": "./@wonkytech/tm-firebase-user.js",
-    "lit-element": "./lit-element.js",
-    "lit-html": "./lit-html.js"
-  }
-}

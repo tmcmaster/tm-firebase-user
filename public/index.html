@@ -2,53 +2,6 @@
 <html>
 <head>
   <title>tm-firebase-user</title>
+  <script type="module" src="./index.js"></script>
 </head>
-<body>
-  <script type="module">
-
-    import {Firebase} from './web_modules/@wonkytech/tm-firebase-service.js';
-    import './web_modules/@wonkytech/tm-firebase-user.js';
-
-    import {mainConfig, appConfig, userLogin} from "./firebase-config.js";
-
-    Firebase.init({
-      appName: 'meetup',
-      appConfig: appConfig,
-      mainConfig: mainConfig
-    }).then(() => {
-      console.log('Firebase initialised.');
-    }).catch(error => console.error('Could not initialise firebase: ', error));
-
-    document.addEventListener('firebase-ready', (event) => {
-      console.log('PUBLIC - Firebase is ready to use.');
-    });
-
-    document.addEventListener('user-logged-in', (event) => {
-      console.log('PUBLIC - User logged in.', event);
-    });
-
-    document.addEventListener('user-logged-out', (event) => {
-      console.log('PUBLIC - User logged out.', event);
-    });
-
-  </script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100vw;
-      height: 100vh;
-      background: lightgray;
-    }
-
-    tm-firebase-user {
-      --tm-firebase-user-color: blue;
-      clear: both;
-      float: right;
-      margin: 50px;
-    }
-  </style>
-  <tm-firebase-user></tm-firebase-user>
-
-</body>
 </html>
