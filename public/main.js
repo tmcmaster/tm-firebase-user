@@ -17,7 +17,7 @@ document.addEventListener('user-logged-out', (event) => {
 render(html`
     <style>
         html {
-            --tm-firebase-user-color: grey;
+            /*--tm-firebase-user-color: grey;*/
         }
         body {
             background-color: white;

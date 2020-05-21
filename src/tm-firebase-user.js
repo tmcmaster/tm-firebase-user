@@ -182,13 +182,13 @@ window.customElements.define('tm-firebase-user', class extends LitElement {
                 box-sizing: border-box;
                 font-size: 1.8vh;
                 padding-right: 20px;
-                color: var(--tm-firebase-user-color, lightgray);
+                color: var(--tm-firebase-user-color, gray);
             }
 
             mwc-button.title {
                 flex: 1;
-                --mdc-theme-primary: var(--tm-firebase-user-color, lightgray);
-                --mdc-theme-on-primary: var(--tm-firebase-user-color, lightgray);
+                --mdc-theme-primary: var(--tm-firebase-user-color, gray);
+                --mdc-theme-on-primary: var(--tm-firebase-user-color, gray);
             }
             
             mwc-tab {
